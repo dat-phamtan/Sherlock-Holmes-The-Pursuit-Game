@@ -11,6 +11,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <deque>
+#include <random>
 
 using namespace std;
 // The library here is concretely set, students are not allowed to include any other libraries.

@@ -5,6 +5,16 @@
 /// Complete the following functions
 /// DO NOT modify any parameters in the functions.
 ////////////////////////////////////////////////////////////////////////
+
+// deque<string> logString;
+
+int randomInt(int min, int max) {
+    static random_device rd;
+    static mt19937 gen(rd());
+    uniform_int_distribution<> dist(min, max);
+    return dist(gen);
+}
+
 const Position Position::npos = Position(-1, -1);
 /*
  * CLASS: MapElement
@@ -640,17 +650,28 @@ Robot *Robot::create(int index, Map *map, Criminal *criminal, Sherlock *sherlock
         return new RobotC(index, criminal->getPrevPosition(), map, criminal);
     }
     else{
-        int sherdis = criminal->manhattanDistance(sherlock->getCurrentPosition(), criminal->getPrevPosition());
-        int watdis = criminal->manhattanDistance(watson->getCurrentPosition(),criminal->getPrevPosition());
-        if(sherdis < watdis){
+        int randomNum = randomInt(0, 2);
+        if (randomNum == 0){
             return new RobotS(index, criminal->getPrevPosition(), map, criminal, sherlock);
         }
-        else if (sherdis > watdis){
+        else if (randomNum == 1){
             return new RobotW(index, criminal->getPrevPosition(), map, criminal, watson);
         }
-        else if (sherdis == watdis){
+        else if (randomNum == 2){
             return new RobotSW(index, criminal->getPrevPosition(), map, criminal, sherlock, watson);
         }
+        // return new RobotSW(index, criminal->getPrevPosition(), map, criminal, sherlock, watson);
+        // int sherdis = criminal->manhattanDistance(sherlock->getCurrentPosition(), criminal->getPrevPosition());
+        // int watdis = criminal->manhattanDistance(watson->getCurrentPosition(),criminal->getPrevPosition());
+        // if(sherdis < watdis){
+        //     return new RobotS(index, criminal->getPrevPosition(), map, criminal, sherlock);
+        // }
+        // else if (sherdis > watdis){
+        //     return new RobotW(index, criminal->getPrevPosition(), map, criminal, watson);
+        // }
+        // else if (sherdis == watdis){
+        //     return new RobotSW(index, criminal->getPrevPosition(), map, criminal, sherlock, watson);
+        // }
     }
     return nullptr;
 }
@@ -1521,7 +1542,7 @@ WatsonBag::WatsonBag(Watson *character)
 {
     this->size = 0;
     this->head = nullptr;
-    this->capacity = 9;
+    this->capacity = 12;
     this->watson = character;
 }
 BaseItem *WatsonBag::get()
@@ -1820,6 +1841,7 @@ BaseItem *Robot::NewItem(){
 // }
 StudyPinkProgram::StudyPinkProgram(const string &config_file_path)
 {
+    // logger = new Logger();
     config = new Configuration(config_file_path);
     map = new Map(config->map_num_rows, config->map_num_cols, config->num_walls, config->arr_walls, config->num_fake_walls, config->arr_fake_walls);
     arr_mv_objs = new ArrayMovingObject(config->max_num_moving_objects);
@@ -1906,6 +1928,7 @@ bool ArrayMovingObject::checkMeet(int index) const
                                     out->setPos(getpos->getCurrentPosition());
                                 }
                             }
+
                             return true;
                         }
                         else{check = false;}
@@ -2058,6 +2081,7 @@ bool ArrayMovingObject::checkMeet(int index) const
     }
     return false;
 }
+
 // *CLASS: Sherlock
 void Sherlock::setPos(Position pos)
 {
@@ -2075,10 +2099,14 @@ bool Sherlock::meet(RobotS *robotS)
     }
     if(this->getEXP() > 400){
         this->bag->insert(robotS->NewItem());
+        string out = "Sherlock beat RobotS and got item.";
+        Logger::instance().add(out);
     }
     else{
         if(!t){
             this->setEXP(ceil((float)this->getEXP()*0.9));
+            string out = "Sherlock lost to RobotS (-10% EXP).";
+            Logger::instance().add(out);
         }
     }
     BaseItem* k = this->bag->get();
@@ -2096,6 +2124,8 @@ bool Sherlock::meet(RobotW *robotW)
         }
     }
     this->bag->insert(robotW->NewItem());
+    string out = "Sherlock beat RobotW and got item.";
+    Logger::instance().add(out);
     BaseItem* k = this->bag->get();
     if( k != nullptr){
         k->use(this, nullptr);
@@ -2114,11 +2144,15 @@ bool Sherlock::meet(RobotSW *robotSW)
     }
     if(this->getEXP() > 300 and this->getHP() > 335){
         this->bag->insert(robotSW->NewItem());
+        string out = "Sherlock beat RobotSW and got item.";
+        Logger::instance().add(out);
     }
     else{
         if(!t){
             this->setEXP(ceil((float)this->getEXP()*0.85));
             this->setHP(ceil((float)this->getHP()*0.85));
+            string out = "Sherlock lost to RobotSW (-10% EXP,HP).";
+            Logger::instance().add(out);
         }
     }
     BaseItem* k = this->bag->get();
@@ -2133,17 +2167,23 @@ bool Sherlock::meet(RobotC *robotC)
         BaseItem *k = new ExcemptionCard();
         if(k->canUse(this, robotC)){
             this->bag->get(EXCEMPTION_CARD)->use(this, robotC);
+            // string out = "Sherlock used Excemption Card.";
+            // Logger::instance().add(out);
         }
     }
     if(this->getEXP() > 500){
+        string out = "Sherlock caught Criminal.";
+        Logger::instance().add(out);
         return true;
     }
     else{
         this->bag->insert(robotC->NewItem());
+        string out = "Sherlock beat RobotC and got item.";
+        Logger::instance().add(out);
         BaseItem* k = this->bag->get();
-    if( k != nullptr){
-        k->use(this, nullptr);
-    }
+        if( k != nullptr){
+            k->use(this, nullptr);
+        }
         return false;
     } 
 }
@@ -2156,6 +2196,12 @@ bool Sherlock::meet(Watson *watson)
         while(watson->getBag()->checkItem(EXCEMPTION_CARD)){
             this->bag->insert(watson->getBag()->get(EXCEMPTION_CARD));
         }
+        string out = "Sherlock, Watson traded items.";
+        Logger::instance().add(out);
+    }
+    else{
+        string out = "Sherlock met Watson.";
+        Logger::instance().add(out);
     }
     return false;
 }
@@ -2188,16 +2234,22 @@ bool Watson::meet(RobotW *robotW)
         if(k->canUse(this, robotW)){
             this->bag->get(PASSING_CARD)->use(this, robotW);
             this->bag->insert(robotW->NewItem());
+            string out = "Watson beat RobotW and got item.";
+            Logger::instance().add(out);
             t = false;
         }
     }
     else if(this->getHP() > 350){
         if(t){
             this->bag->insert(robotW->NewItem());
+            string out = "Watson beat RobotW and got item.";
+            Logger::instance().add(out);
         }
     }
     else{
         this->setHP(ceil((float)this->getHP()*0.95));
+        string out = "Watson lost to RobotW (-5% HP).";
+        Logger::instance().add(out);
     }
     BaseItem* k = this->bag->get();
     if( k != nullptr){
@@ -2213,17 +2265,23 @@ bool Watson::meet(RobotSW *robotSW)
         if(k->canUse(this, robotSW) ){
             this->bag->get(PASSING_CARD)->use(this, robotSW);
             this->bag->insert(robotSW->NewItem());
+            string out = "Watson beat RobotSW and got item.";
+            Logger::instance().add(out);
             t = false;
         }
     }
     else if(this->getEXP() > 600 and this->getHP() > 165){ 
        if(t){
             this->bag->insert(robotSW->NewItem());
+            string out = "Watson beat RobotSW and got item.";
+            Logger::instance().add(out);
         }
     }
     else{
         this->setEXP(ceil((float)this->getEXP()*0.85));
         this->setHP(ceil((float)this->getHP()*0.85));
+        string out = "Watson lost to RobotSW (-15% HP, EXP).";
+        Logger::instance().add(out);
     }
     
     BaseItem* k = this->bag->get();
@@ -2239,10 +2297,14 @@ bool Watson::meet(RobotC *robotC)
         if(k->canUse(this, robotC)){
             this->bag->get(PASSING_CARD)->use(this, robotC);
             this->bag->insert(robotC->NewItem());
+            string out = "Watson beat RobotC and got item.";
+            Logger::instance().add(out);
         }
     }
     else{
         this->bag->insert(robotC->NewItem());
+        string out = "Watson lost to RobotC and got item.";
+        Logger::instance().add(out);
     }
     BaseItem* k = this->bag->get();
     if( k != nullptr){
@@ -2259,10 +2321,15 @@ bool Watson::meet(Sherlock *sherlock)
         while(this->bag->checkItem(EXCEMPTION_CARD)){
             sherlock->getBag()->insert(this->bag->get(EXCEMPTION_CARD));
         }
+        string out = "Sherlock, Watson traded items.";
+        Logger::instance().add(out);
+    }
+    else{
+        string out = "Watson met Sherlock.";
+        Logger::instance().add(out);
     }
     return false;
 }
-
 
 ////////////////////////////////////////////////
 /// END OF STUDENT'S ANSWER

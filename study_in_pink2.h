@@ -49,7 +49,8 @@ enum ItemType
     ENERGY_DRINK,
     FIRST_AID,
     EXCEMPTION_CARD,
-    PASSING_CARD
+    PASSING_CARD,
+    NONE
 };
 enum ElementType
 {
@@ -72,6 +73,15 @@ enum MovingObjectType
     ROBOT
 };
 
+// extern deque<string> logString;
+
+// void insertLogString(string aLog){
+//     if(aLog == "") return;
+//     if(logString.size() > 15){
+//         logString.pop_front();
+//     }
+//     logString.push_back(aLog);
+// }
 class MapElement
 {
     friend class TestStudyInPink;
@@ -159,6 +169,7 @@ protected:
     Position pos;
     Map *map;
     string name;
+    // deque<string> logString;
 
 public:
     MovingObject(int index, const Position pos, Map *map, const string &name = "");
@@ -168,6 +179,13 @@ public:
     virtual void move() = 0;
     virtual string str() const = 0;
     virtual MovingObjectType getObjectType() const = 0;
+    // void insertLogString(string aLog){
+    //     if(aLog == "") return;
+    //     if(logString.size() > 15){
+    //         logString.pop_front();
+    //     }
+    //     logString.push_back(aLog);
+    // }
 };
 
 class Character : public MovingObject
@@ -276,6 +294,7 @@ private:
     MovingObject **arr_mv_objs;
     int count;
     int capacity;
+    // deque<string> logString;
 
 public:
     ArrayMovingObject(int capacity);
@@ -286,6 +305,10 @@ public:
     bool checkMeet(int index) const;
     MovingObject *get(int index) const;
     int size() const;
+    // void insertLogString(string aLog);
+    // deque<string> getLogString(){
+    //     return this->logString;
+    // }
 };
 
 class Configuration
@@ -532,6 +555,29 @@ public:
     BaseBag(int capacity);
     virtual ~BaseBag();
     bool checkItem(ItemType itemType);
+    int getSize() const
+    {
+        return size;
+    }
+    ItemType getItemType(int pos) const
+    {
+        if (pos < 0 || pos >= size)
+        {
+            return ItemType::NONE;
+        }
+        int check = 0;
+        Node *tim = head;
+        while (tim != nullptr)
+        {
+            if (check == pos)
+            {
+                return tim->item->getType();
+            }
+            check++;
+            tim = tim->next;
+        }
+        return ItemType::NONE;
+    }
 };
 class SherlockBag : public BaseBag
 {
@@ -568,6 +614,8 @@ public:
     Map *map;
     ArrayMovingObject *arr_mv_objs;
     bool var;
+    // Logger *logger;
+    // vector<string> logString;
 
     StudyPinkProgram(){};
     StudyPinkProgram(const string &config_file_path);
@@ -596,7 +644,38 @@ public:
     }
     void run(bool verbose);
     ~StudyPinkProgram();
+    // void insertLogString();
+    // vector<string> getLogString(){
+    //     return this->logString;
+    // };
     
+};
+
+class Logger {
+private:
+    std::deque<std::string> logs;
+    Logger() {} // constructor private để không thể tạo instance khác
+
+public:
+    static Logger& instance() {
+        static Logger instance; // duy nhất trong toàn chương trình
+        return instance;
+    }
+
+    void add(const std::string& message) {
+        if (message == "") return;
+        if (logs.size() > 10)
+            logs.pop_front();
+        logs.push_back(message);
+    }
+
+    string get(int i) const {
+        return logs.at(i);
+    }
+
+    int size(){return (int)logs.size();}
+
+    void clear() { logs.clear(); }
 };
 
 ////////////////////////////////////////////////
