@@ -275,56 +275,110 @@ Watson::Watson(int index, const string &moving_rule, const Position &init_pos, M
     this -> submoving_rule = moving_rule;
     this -> index_moving_rule = 0;
     bag = new WatsonBag(this);
+    this -> prev_pos = Position::npos;
 }
 Watson::~Watson(){
     delete bag;
 }
 Position Watson::getNextPosition()
 {
-    if (submoving_rule.find("U") == 0){
-        Position upos = Position(pos.getRow() - 1 , pos.getCol());
-        if(map->isValid(upos, this))
-            return upos;
-        else
-            return Position::npos;
+    std::vector<Position> candidates;
+
+    Position up(pos.getRow() - 1, pos.getCol());
+    Position left(pos.getRow(), pos.getCol() - 1);
+    Position down(pos.getRow() + 1, pos.getCol());
+    Position right(pos.getRow(), pos.getCol() + 1);
+
+    // Kiểm tra từng hướng hợp lệ
+    if (map->isValid(up, this)) candidates.push_back(up);
+    if (map->isValid(left, this)) candidates.push_back(left);
+    if (map->isValid(down, this)) candidates.push_back(down);
+    if (map->isValid(right, this)) candidates.push_back(right);
+
+    if (candidates.empty()) {
+        return Position::npos; // Không có hướng hợp lệ
     }
-    else if (submoving_rule.find("L") == 0){
-        Position upos = Position(pos.getRow() , pos.getCol() - 1);
-        if(map->isValid(upos, this))
-            return upos;
-        else
-            return Position::npos;
-    }
-    else if (submoving_rule.find("D") == 0){
-        Position upos = Position(pos.getRow() + 1 , pos.getCol());
-        if(map->isValid(upos, this))
-            return upos;
-        else
-            return Position::npos;
-    }
-    else if (submoving_rule.find("R") == 0){
-        Position upos = Position(pos.getRow() , pos.getCol() + 1);
-        if(map->isValid(upos, this))
-            return upos;
-        else
-            return Position::npos;
-    }
-    return Position::npos;
+
+    int ranNum = randomInt(1, candidates.size());
+    return candidates[ranNum - 1];
+
+    // if(ranNum == 1){
+    //     Position upos = Position(pos.getRow() - 1 , pos.getCol());
+    //     if(map->isValid(upos, this)){
+    //         return upos;
+    //     }
+    //     else{
+    //         return this->getNextPosition();
+    //     }
+    // }
+    // else if(ranNum == 2){
+    //     Position upos = Position(pos.getRow() , pos.getCol() - 1);
+    //     if(map->isValid(upos, this)){
+    //         return upos;
+    //     }
+    //     else{
+    //         return this->getNextPosition();
+    //     }
+    // }
+    // else if(ranNum == 3){
+    //     Position upos = Position(pos.getRow() + 1 , pos.getCol());
+    //     if(map->isValid(upos, this)){
+    //         return upos;
+    //     }
+    //     else{
+    //         return this->getNextPosition();
+    //     }
+    // }
+    // else if(ranNum == 4){
+    //     Position upos = Position(pos.getRow() , pos.getCol() + 1);
+    //     if(map->isValid(upos, this)){
+    //         return upos;
+    //     }
+    //     else{
+    //         return this->getNextPosition();
+    //     }
+    // }
+
+    // if (submoving_rule.find("U") == 0){
+    //     Position upos = Position(pos.getRow() - 1 , pos.getCol());
+    //     if(map->isValid(upos, this))
+    //         return upos;
+    //     else
+    //         return Position::npos;
+    // }
+    // else if (submoving_rule.find("L") == 0){
+    //     Position upos = Position(pos.getRow() , pos.getCol() - 1);
+    //     if(map->isValid(upos, this))
+    //         return upos;
+    //     else
+    //         return Position::npos;
+    // }
+    // else if (submoving_rule.find("D") == 0){
+    //     Position upos = Position(pos.getRow() + 1 , pos.getCol());
+    //     if(map->isValid(upos, this))
+    //         return upos;
+    //     else
+    //         return Position::npos;
+    // }
+    // else if (submoving_rule.find("R") == 0){
+    //     Position upos = Position(pos.getRow() , pos.getCol() + 1);
+    //     if(map->isValid(upos, this))
+    //         return upos;
+    //     else
+    //         return Position::npos;
+    // }
+    // return Position::npos;
 }
 void Watson::move()
 {
-    if(this->getEXP() != 0){
-        if(Position::npos.isEqual(this->getNextPosition())){
-            this->getNextPosition();
-        }
-        else{
-            pos = this->getNextPosition();
-            this->getNextPosition();
-        }
+    if (this->getEXP() == 0) return;
+
+    Position next = this->getNextPosition();
+    if (!Position::npos.isEqual(next)) {
+        pos = next;  // luôn di chuyển 1 bước hợp lệ
     }
-    submoving_rule = submoving_rule + submoving_rule[0];
-    submoving_rule.erase(submoving_rule.begin());
 }
+
 string Watson::str() const
 {
     string Wat ="Watson[index="+ to_string(this->index) +";pos=" + this->pos.str() + ";moving_rule=" + this->moving_rule + "]";

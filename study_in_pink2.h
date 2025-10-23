@@ -242,6 +242,7 @@ private:
     string submoving_rule;
     int index_moving_rule;
     BaseBag *bag;
+    Position prev_pos;
 
 public:
     Watson(int index, const string &moving_rule, const Position &init_pos, Map *map, int init_hp, int init_exp);

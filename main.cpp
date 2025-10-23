@@ -133,6 +133,7 @@ public:
     // GameState state = GameState::OVER;
     string stopCase = "";
     int caseFlag = 0;
+    bool doublePlayerFlag = true;
 
     Image wall;
     Image fake_wall;
@@ -565,7 +566,12 @@ public:
 
     void Update() {
         for(int i = 0; i < this->program->arr_mv_objs->size(); i++){
-            if (i != 1 && i != 2){
+            if(this->doublePlayerFlag && (i == 1 || i == 2)){
+                continue;
+            }
+            if(!this->doublePlayerFlag && i==1){
+                continue;
+            }
                 if (this->CheckStop()){
                     GameOver();
                     break;
@@ -592,7 +598,6 @@ public:
                         delete robot;
                     }
                 }
-            }
         }
     };
 
@@ -706,11 +711,11 @@ public:
     void GameOver() {
         CheckStopCase();
         state = GameState::OVER;
-        delete program;
+        // delete program;
         // program = new StudyPinkProgram(configFile);
         // COUNT = 0;
         Logger::instance().clear();
-        GameInit(configFile);
+        // GameInit(configFile);
         sherlockDiraction = "";
         watsonDiraction = "";
         
@@ -752,25 +757,31 @@ int main () {
             }
 
             //ControlWatson
-            if (IsKeyPressed(KEY_S) && game.checkValidMove("D", "Watson")){
-                game.watsonDiraction = "D";
-            } 
-            if (IsKeyPressed(KEY_W) && game.checkValidMove("U", "Watson")){
-                game.watsonDiraction = "U";
-            }
-            if (IsKeyPressed(KEY_A) && game.checkValidMove("L", "Watson")){
-                game.watsonDiraction = "L";
-            }
-            if (IsKeyPressed(KEY_D) && game.checkValidMove("R", "Watson")){
-                game.watsonDiraction = "R";
+            if(game.doublePlayerFlag){
+                if (IsKeyPressed(KEY_S) && game.checkValidMove("D", "Watson")){
+                    game.watsonDiraction = "D";
+                } 
+                if (IsKeyPressed(KEY_W) && game.checkValidMove("U", "Watson")){
+                    game.watsonDiraction = "U";
+                }
+                if (IsKeyPressed(KEY_A) && game.checkValidMove("L", "Watson")){
+                    game.watsonDiraction = "L";
+                }
+                if (IsKeyPressed(KEY_D) && game.checkValidMove("R", "Watson")){
+                    game.watsonDiraction = "R";
+                }
             }
 
-            if (IsKeyPressed(KEY_SPACE) && game.sherlockDiraction != "" && game.watsonDiraction != ""){
+            if (game.doublePlayerFlag && IsKeyPressed(KEY_SPACE) && game.sherlockDiraction != "" && game.watsonDiraction != ""){
                 COUNT++;
                 game.SherlockMove();
                 game.WatsonMove();
                 game.Update();
                 
+            }else if (!game.doublePlayerFlag && IsKeyPressed(KEY_SPACE) && game.sherlockDiraction != ""){
+                COUNT++;
+                game.SherlockMove();
+                game.Update();
             }
             
 
@@ -788,6 +799,7 @@ int main () {
                 game.DrawWatsonDiractionArrow();
             }
             game.DrawCharacters();
+            
 
         }
         else if(game.state == GameState::OVER){
@@ -817,9 +829,13 @@ int main () {
             bool quit = DrawButton(Rectangle{1110, 700, 150, 50}, "Quit game", 20, normal, hover);
 
             if (playAgain){ 
+                delete game.program;
+                game.GameInit(configFile);
                 game.state = GameState::PLAYING;
+                
             }
             if (quit){
+                // delete game.program;
                 break;
             }
 
@@ -862,13 +878,19 @@ int main () {
             DrawTextureEx(game.menuBGTexture, (Vector2){0.0f, 0.0f}, 0.0, bgTarget, WHITE);
             float singleTarget = (float)78/ game.singlePlayerTexture.height;
             DrawTextureEx(game.singlePlayerTexture, (Vector2){480,570}, 0.0, singleTarget, WHITE);
-            DrawClickedArea(Rectangle{495, 583, 314, 56});
+            bool singleP = DrawClickedArea(Rectangle{495, 583, 314, 56});
+            if(singleP){
+                game.doublePlayerFlag = false;
+                game.state = GameState::PLAYING;
+            }
 
             float doubleTarget = (float)70 / game.doublePlayerTexture.height;
             DrawTextureEx(game.doublePlayerTexture, (Vector2){498, 670}, 0.0, doubleTarget, WHITE);
-            DrawClickedArea(Rectangle{507, 679, 294, 56});
-            // bool startSingle = DrawButton(Rectangle{700, 500, 300, 60}, "Single player", 30, normal, hover);
-            // bool startDou = DrawButton(Rectangle{700, 600, 300, 60}, "Dou players", 30, normal, hover);
+            bool doubleP = DrawClickedArea(Rectangle{507, 679, 294, 56});
+            if(doubleP){
+                game.doublePlayerFlag = true;
+                game.state = GameState::PLAYING;
+            }
         }
 
         EndDrawing();
