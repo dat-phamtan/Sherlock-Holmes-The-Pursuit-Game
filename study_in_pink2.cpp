@@ -216,10 +216,10 @@ int Sherlock::getHP() const
 }
 int Sherlock::getEXP() const
 {
-    if (exp >= 0 and exp <= 900)
+    if (exp >= 0 and exp <= 3000)
         return exp;
-    else if (exp > 900){
-        exp == 900;
+    else if (exp > 3000){
+        exp == 3000;
         return exp;
     }
     else{
@@ -242,10 +242,10 @@ void Sherlock::setHP(int hp)
 }
 void Sherlock::setEXP(int exp)
 {
-    if (exp >= 0 and exp <= 900)
+    if (exp >= 0 and exp <= 3000)
         this -> exp = exp;
-    else if (exp > 900){
-        exp = 900;
+    else if (exp > 3000){
+        exp = 3000;
         this -> exp = exp;
     }
     else{
@@ -390,10 +390,10 @@ MovingObjectType Watson::getObjectType() const
 }
 int Watson::getHP() const
 {
-    if (hp >= 0 and hp <= 500)
+    if (hp >= 0 and hp <= 700)
         return hp;
-    else if (hp > 500){
-        hp == 500;
+    else if (hp > 700){
+        hp == 700;
         return hp;
     }
     else{
@@ -403,10 +403,10 @@ int Watson::getHP() const
 }
 int Watson::getEXP() const
 {
-    if (exp >= 0 and exp <= 900)
+    if (exp >= 0 and exp <= 2500)
         return exp;
-    else if (exp > 900){
-        exp == 900;
+    else if (exp > 2500){
+        exp == 2500;
         return exp;
     }
     else{
@@ -416,10 +416,10 @@ int Watson::getEXP() const
 }
 void Watson::setHP(int hp)
 {
-    if (hp >= 0 and hp <= 500)
+    if (hp >= 0 and hp <= 700)
         this -> hp = hp;
-    else if (hp > 500){
-        hp = 500;
+    else if (hp > 700){
+        hp = 700;
         this -> hp = hp;
     }
     else{
@@ -429,10 +429,10 @@ void Watson::setHP(int hp)
 }
 void Watson::setEXP(int exp)
 {
-    if (exp >= 0 and exp <= 900)
+    if (exp >= 0 and exp <= 2500)
         this -> exp = exp;
-    else if (exp > 900){
-        exp = 900;
+    else if (exp > 2500){
+        exp = 2500;
         this -> exp = exp;
     }
     else{
@@ -469,7 +469,7 @@ Map::Map(int num_rows, int num_cols, int num_walls, Position *array_walls, int n
                 int x = array_fake_walls[i].getRow();
                 int y = array_fake_walls[i].getCol();
                 delete map[x][y];
-                map[x][y] = new FakeWall((x*257 + y*139 + 89)%900 + 1);
+                map[x][y] = new FakeWall((x*257 + y*139 + 89)%1000 + 1);
             }
         }
         for (int i = 0; i < num_walls; i++){
@@ -521,7 +521,7 @@ bool Map::isValid(const Position &pos, MovingObject *mv_obj) const
                 return true;
             else if(map[i][j]->getType() == 2){
                 Watson *mv_obj2 = dynamic_cast<Watson*>(mv_obj);
-                if (((i*257 + j*139 + 89)%900 + 1) >= mv_obj2->getEXP() )
+                if (((i*257 + j*139 + 89)%1000 + 1) >= mv_obj2->getEXP() )
                     return false;
                 else
                     return true;
@@ -704,6 +704,7 @@ Robot *Robot::create(int index, Map *map, Criminal *criminal, Sherlock *sherlock
         return new RobotC(index, criminal->getPrevPosition(), map, criminal);
     }
     else{
+        return new RobotS(index, criminal->getPrevPosition(), map, criminal, sherlock);
         int randomNum = randomInt(0, 2);
         if (randomNum == 0){
             return new RobotS(index, criminal->getPrevPosition(), map, criminal, sherlock);
@@ -2136,30 +2137,107 @@ bool ArrayMovingObject::checkMeet(int index) const
     return false;
 }
 
+
+
 // *CLASS: Sherlock
+//tính toán kết quả khi gặp mặt
+bool Sherlock::sherlockBattle(int robotExp, float counterExp, float counterPercent, int& hpLoss, int& expLoss, int& expGain){
+    double randomFactor = (randomInt(95, 105)) / 100.0;
+    double chance = (double)this->getEXP()/(this->getEXP() + robotExp + counterExp) * randomFactor;
+    chance = chance * (1.0 - counterPercent*2.0);
+
+    if(chance > 0.85) chance = 0.85;
+    if(chance < 0) chance = 0.05;
+
+    
+    double roll = (randomInt(0, 100)) / 100.0;
+
+    if (roll < chance){
+        double expGainBase = 0.15;
+        double expGainModifier = expGainBase - counterPercent;
+        double counterBonus = 1;
+
+        // if(counterPercent < 0) counterBonus = 1.1;
+        // else if (counterPercent == 0);
+        // else counterBonus = 0.9;
+
+        expGain = (int)ceil(robotExp * expGainModifier * randomFactor * counterBonus);
+        this->setEXP(this->getEXP() + expGain);
+        return true;
+    }
+    else{
+        double hpLossBase = robotExp/8.0;
+        double hpLossFactor = 1.0 - counterPercent * 2.0; // Amplify counter effect
+        if(hpLossFactor < 0.5) hpLossFactor = 0.5;   // Min 50% damage
+        if(hpLossFactor > 1.5) hpLossFactor = 1.5;   // Max 150% damage
+
+
+        double expLossBase = 0.08;
+        double expLossModifier = expLossBase - counterPercent * 2.0; // Negative counter increases loss
+        if(expLossModifier < 0.03) expLossModifier = 0.03; // Min 3% loss
+        if(expLossModifier > 0.15) expLossModifier = 0.15; // Max 15% loss
+
+        hpLoss = (int)ceil(hpLossBase * hpLossFactor * randomFactor);
+        expLoss = (int)ceil(robotExp * expLossModifier * randomFactor);
+
+        this->setHP(this->getHP() - hpLoss);
+        this->setEXP(this->getEXP() - expLoss);
+        return false;
+    }
+}
+
 void Sherlock::setPos(Position pos)
 {
     this->pos = pos;
 }
+
+/*
+RobotS: Thông minh, khắc chế Sherlock nhưng bị Watson khắc chế.
+- exp: 600
+- counter: sherlock (50, -0.05)
+- countered: watson (50, 0.05)
+
+RobotW: Mạnh mẽ, khắc chế Watson nhưng bị Sherlock khắc chế.
+- exp: 400
+- counter: watson (50, -0.05)
+- countered: sherlock (50, 0.05)
+
+RobotSW: Boss, khắc chế mạnh cả Sherlock và Watson.
+- exp: 800
+- counter: sherlock (100, -0.1), watson (100, -0.1)
+- countered: none
+
+RobotC: Vệ sĩ cho Criminal có exp cực cao và counter cả 2.
+- exp: 2000
+- counter: sherlock (100, -0.1), watson (100, -0.1)
+- countered: none
+*/
 bool Sherlock::meet(RobotS *robotS)
 {
-    bool t;
     if(this->bag->checkItem(EXCEMPTION_CARD)){
         BaseItem *k = new ExcemptionCard();
         if(k->canUse(this, robotS)){
             this->bag->get(EXCEMPTION_CARD)->use(this, robotS);
-            t = true;
+
+            BaseItem* q = this->bag->get();
+            if(q != nullptr){
+                q->use(this, nullptr);
+            }
+            return true;
         }
     }
-    if(this->getEXP() > 400){
-        this->bag->insert(robotS->NewItem());
-        string out = "Sherlock beat RobotS and got item.";
-        Logger::instance().add(out);
-    }
     else{
-        if(!t){
-            this->setEXP(ceil((float)this->getEXP()*0.9));
-            string out = "Sherlock lost to RobotS (-10% EXP).";
+        int hpLoss = 0;
+        int expLoss = 0;
+        int expGain = 0;
+        bool result = this->sherlockBattle(800, 50, -0.05, hpLoss, expLoss, expGain);
+        if(result){
+            this->bag->insert(robotS->NewItem());
+            string out = "Sherlock beat RobotS (+" + to_string(expGain) + " EXP), got item";
+            Logger::instance().add(out);
+        }
+        else{
+            string out = "Sherlock lost to RobotS (-" + to_string(hpLoss) + " HP, -" + to_string(expLoss) + " EXP)";
             Logger::instance().add(out);
         }
     }
@@ -2168,6 +2246,19 @@ bool Sherlock::meet(RobotS *robotS)
         k->use(this, nullptr);
     }
     return false;
+
+    // if(this->getEXP() > 400){
+    //     this->bag->insert(robotS->NewItem());
+    //     string out = "Sherlock beat RobotS and got item.";
+    //     Logger::instance().add(out);
+    // }
+    // else{
+    //     if(!t){
+    //         this->setEXP(ceil((float)this->getEXP()*0.9));
+    //         string out = "Sherlock lost to RobotS (-10% EXP).";
+    //         Logger::instance().add(out);
+    //     }
+    // }
 }
 bool Sherlock::meet(RobotW *robotW)
 {
@@ -2175,37 +2266,75 @@ bool Sherlock::meet(RobotW *robotW)
         BaseItem *k = new ExcemptionCard();
         if(k->canUse(this, robotW)){
             this->bag->get(EXCEMPTION_CARD)->use(this, robotW);
+
+            BaseItem* q = this->bag->get();
+            if(q != nullptr){
+                q->use(this, nullptr);
+            }
+            return true;
         }
     }
-    this->bag->insert(robotW->NewItem());
-    string out = "Sherlock beat RobotW and got item.";
-    Logger::instance().add(out);
+    else{
+        int hpLoss = 0;
+        int expLoss = 0;
+        int expGain = 0;
+        bool result = this->sherlockBattle(600, 50, 0.05, hpLoss, expLoss, expGain);
+        if(result){
+            this->bag->insert(robotW->NewItem());
+            string out = "Sherlock beat RobotW (+" + to_string(expGain) + " EXP), got item";
+            Logger::instance().add(out);
+        }
+        else{
+            string out = "Sherlock lost to RobotW (-" + to_string(hpLoss) + " HP, -" + to_string(expLoss) + " EXP)";
+            Logger::instance().add(out); 
+        }
+    }
     BaseItem* k = this->bag->get();
     if( k != nullptr){
         k->use(this, nullptr);
     }
     return false;
+    // if(this->bag->checkItem(EXCEMPTION_CARD)){
+    //     BaseItem *k = new ExcemptionCard();
+    //     if(k->canUse(this, robotW)){
+    //         this->bag->get(EXCEMPTION_CARD)->use(this, robotW);
+    //     }
+    // }
+    // this->bag->insert(robotW->NewItem());
+    // string out = "Sherlock beat RobotW and got item.";
+    // Logger::instance().add(out);
+    // BaseItem* k = this->bag->get();
+    // if( k != nullptr){
+    //     k->use(this, nullptr);
+    // }
+    // return false;
 }
 bool Sherlock::meet(RobotSW *robotSW)
 {
-    bool t;
     if(this->bag->checkItem(EXCEMPTION_CARD)){
         BaseItem *k = new ExcemptionCard();
         if(k->canUse(this, robotSW)){
             this->bag->get(EXCEMPTION_CARD)->use(this, robotSW);
-            t = true;
+
+            BaseItem* q = this->bag->get();
+            if(q != nullptr){
+                q->use(this, nullptr);
+            }
+            return true;
         }
     }
-    if(this->getEXP() > 300 and this->getHP() > 335){
-        this->bag->insert(robotSW->NewItem());
-        string out = "Sherlock beat RobotSW and got item.";
-        Logger::instance().add(out);
-    }
     else{
-        if(!t){
-            this->setEXP(ceil((float)this->getEXP()*0.85));
-            this->setHP(ceil((float)this->getHP()*0.85));
-            string out = "Sherlock lost to RobotSW (-10% EXP,HP).";
+        int hpLoss = 0;
+        int expLoss = 0;
+        int expGain = 0;
+        bool result = this->sherlockBattle(1000, 100, -0.1, hpLoss, expLoss, expGain);
+        if(result){
+            this->bag->insert(robotSW->NewItem());
+            string out = "Sherlock beat RobotSW (+" + to_string(expGain) + " EXP), got item";
+            Logger::instance().add(out);
+        }
+        else{
+            string out = "Sherlock lost to RobotSW (-" + to_string(hpLoss) + " HP, -" + to_string(expLoss) + " EXP)";
             Logger::instance().add(out);
         }
     }
@@ -2214,6 +2343,32 @@ bool Sherlock::meet(RobotSW *robotSW)
         k->use(this, nullptr);
     }
     return false;
+    // bool t;
+    // if(this->bag->checkItem(EXCEMPTION_CARD)){
+    //     BaseItem *k = new ExcemptionCard();
+    //     if(k->canUse(this, robotSW)){
+    //         this->bag->get(EXCEMPTION_CARD)->use(this, robotSW);
+    //         t = true;
+    //     }
+    // }
+    // if(this->getEXP() > 300 and this->getHP() > 335){
+    //     this->bag->insert(robotSW->NewItem());
+    //     string out = "Sherlock beat RobotSW and got item.";
+    //     Logger::instance().add(out);
+    // }
+    // else{
+    //     if(!t){
+    //         this->setEXP(ceil((float)this->getEXP()*0.85));
+    //         this->setHP(ceil((float)this->getHP()*0.85));
+    //         string out = "Sherlock lost to RobotSW (-10% EXP,HP).";
+    //         Logger::instance().add(out);
+    //     }
+    // }
+    // BaseItem* k = this->bag->get();
+    // if( k != nullptr){
+    //     k->use(this, nullptr);
+    // }
+    // return false;
 }
 bool Sherlock::meet(RobotC *robotC)
 {
@@ -2221,25 +2376,60 @@ bool Sherlock::meet(RobotC *robotC)
         BaseItem *k = new ExcemptionCard();
         if(k->canUse(this, robotC)){
             this->bag->get(EXCEMPTION_CARD)->use(this, robotC);
-            // string out = "Sherlock used Excemption Card.";
-            // Logger::instance().add(out);
+
+            BaseItem* q = this->bag->get();
+            if(q != nullptr){
+                q->use(this, nullptr);
+            }
+            string out = "Sherlock caught Criminal (ExcemptionCard)";
+            Logger::instance().add(out);
+            return true;
         }
-    }
-    if(this->getEXP() > 500){
-        string out = "Sherlock caught Criminal.";
-        Logger::instance().add(out);
-        return true;
     }
     else{
-        this->bag->insert(robotC->NewItem());
-        string out = "Sherlock beat RobotC and got item.";
-        Logger::instance().add(out);
-        BaseItem* k = this->bag->get();
-        if( k != nullptr){
-            k->use(this, nullptr);
+        int hpLoss = 0;
+        int expLoss = 0;
+        int expGain = 0;
+        bool result = this->sherlockBattle(2000, 100, -0.1, hpLoss, expLoss, expGain);
+        if(result){
+            this->bag->insert(robotC->NewItem());
+            string out = "Sherlock caught Criminal";
+            Logger::instance().add(out);
+            return true;
         }
-        return false;
-    } 
+        else{
+            string out = "Sherlock lost RobotC (-" + to_string(hpLoss) + " HP, -" + to_string(expLoss) + " EXP)";
+            Logger::instance().add(out);
+        }
+    }
+    BaseItem* k = this->bag->get();
+    if( k != nullptr){
+        k->use(this, nullptr);
+    }
+    return false;
+    // if(this->bag->checkItem(EXCEMPTION_CARD)){
+    //     BaseItem *k = new ExcemptionCard();
+    //     if(k->canUse(this, robotC)){
+    //         this->bag->get(EXCEMPTION_CARD)->use(this, robotC);
+    //         // string out = "Sherlock used Excemption Card.";
+    //         // Logger::instance().add(out);
+    //     }
+    // }
+    // if(this->getEXP() > 500){
+    //     string out = "Sherlock caught Criminal.";
+    //     Logger::instance().add(out);
+    //     return true;
+    // }
+    // else{
+    //     this->bag->insert(robotC->NewItem());
+    //     string out = "Sherlock beat RobotC and got item.";
+    //     Logger::instance().add(out);
+    //     BaseItem* k = this->bag->get();
+    //     if( k != nullptr){
+    //         k->use(this, nullptr);
+    //     }
+    //     return false;
+    // } 
 }
 bool Sherlock::meet(Watson *watson)
 {
@@ -2254,12 +2444,56 @@ bool Sherlock::meet(Watson *watson)
         Logger::instance().add(out);
     }
     else{
-        string out = "Sherlock met Watson.";
+        string out = "They did not have enough items.";
         Logger::instance().add(out);
     }
     return false;
 }
 // *CLASS: Watson
+bool Watson::watsonBattle(int robotExp, float counterExp, float counterPercent, int& hpLoss, int& expLoss, int& expGain){
+    double randomFactor = (randomInt(95, 105)) / 100.0;
+    double chance = (double)this->getEXP()/(this->getEXP() + robotExp + counterExp) * randomFactor;
+    chance = chance * (1.0 - counterPercent*2.0);
+
+    if(chance > 0.85) chance = 0.85;
+    if(chance < 0) chance = 0.05;
+
+    
+    double roll = (randomInt(0, 100)) / 100.0;
+
+    if (roll < chance){
+        double expGainBase = 0.15;
+        double expGainModifier = expGainBase - counterPercent;
+        double counterBonus = 1;
+
+        // if(counterPercent < 0) counterBonus = 1.1;
+        // else if (counterPercent == 0);
+        // else counterBonus = 0.9;
+
+        expGain = (int)ceil(robotExp * expGainModifier * randomFactor * counterBonus);
+        this->setEXP(this->getEXP() + expGain);
+        return true;
+    }
+    else{
+        double hpLossBase = robotExp/8.0;
+        double hpLossFactor = 1.0 - counterPercent * 2.0; // Amplify counter effect
+        if(hpLossFactor < 0.5) hpLossFactor = 0.5;   // Min 50% damage
+        if(hpLossFactor > 1.5) hpLossFactor = 1.5;   // Max 150% damage
+
+
+        double expLossBase = 0.08;
+        double expLossModifier = expLossBase - counterPercent * 2.0; // Negative counter increases loss
+        if(expLossModifier < 0.03) expLossModifier = 0.03; // Min 3% loss
+        if(expLossModifier > 0.15) expLossModifier = 0.15; // Max 15% loss
+
+        hpLoss = (int)ceil(hpLossBase * hpLossFactor * randomFactor);
+        expLoss = (int)ceil(robotExp * expLossModifier * randomFactor);
+
+        this->setHP(this->getHP() - hpLoss);
+        this->setEXP(this->getEXP() - expLoss);
+        return false;
+    }
+}
 
 void Watson::setPos(Position pos)
 {
@@ -2270,10 +2504,32 @@ bool Watson::meet(RobotS *robotS)
 {
     if(this->bag->checkItem(PASSING_CARD) and this->getHP()%2 == 0){
         BaseItem *k = new PassingCard(0,0);
-        if(k->canUse(this, robotS)){
+        if(k->canUse(this, robotS) ){
             this->bag->get(PASSING_CARD)->use(this, robotS);
+
+            BaseItem* q = this->bag->get();
+            if(q != nullptr){
+                q->use(this, nullptr);
+            }
+            return true;
         }
     }
+    else{
+        int hpLoss = 0;
+        int expLoss = 0;
+        int expGain = 0;
+        bool result = this->watsonBattle(400, 50, 0.05, hpLoss, expLoss, expGain);
+        if(result){
+            this->bag->insert(robotS->NewItem());
+            string out = "Watson beat RobotW (+" + to_string(expGain) + "EXP), got item";
+            Logger::instance().add(out);
+        }
+        else{
+            string out = "Watson lost to RobotW (-" + to_string(hpLoss) + " HP, -" + to_string(expLoss) + " EXP)";
+            Logger::instance().add(out);
+        }
+    }
+    
     BaseItem* k = this->bag->get();
     if( k != nullptr){
         k->use(this, nullptr);
@@ -2282,60 +2538,96 @@ bool Watson::meet(RobotS *robotS)
 }
 bool Watson::meet(RobotW *robotW)
 {
-    bool t = true;
     if(this->bag->checkItem(PASSING_CARD) and this->getHP()%2 == 0){
         BaseItem *k = new PassingCard(0,0);
-        if(k->canUse(this, robotW)){
+        if(k->canUse(this, robotW) ){
             this->bag->get(PASSING_CARD)->use(this, robotW);
-            this->bag->insert(robotW->NewItem());
-            string out = "Watson beat RobotW and got item.";
-            Logger::instance().add(out);
-            t = false;
-        }
-    }
-    else if(this->getHP() > 350){
-        if(t){
-            this->bag->insert(robotW->NewItem());
-            string out = "Watson beat RobotW and got item.";
-            Logger::instance().add(out);
+
+            BaseItem* q = this->bag->get();
+            if(q != nullptr){
+                q->use(this, nullptr);
+            }
+            return true;
         }
     }
     else{
-        this->setHP(ceil((float)this->getHP()*0.95));
-        string out = "Watson lost to RobotW (-5% HP).";
-        Logger::instance().add(out);
+        int hpLoss = 0;
+        int expLoss = 0;
+        int expGain = 0;
+        bool result = this->watsonBattle(400, 50, -0.05, hpLoss, expLoss, expGain);
+        if(result){
+            this->bag->insert(robotW->NewItem());
+            string out = "Watson beat RobotW (+" + to_string(expGain) + "EXP), got item";
+            Logger::instance().add(out);
+        }
+        else{
+            string out = "Watson lost to RobotW (-" + to_string(hpLoss) + " HP, -" + to_string(expLoss) + " EXP)";
+            Logger::instance().add(out);
+        }
     }
+    
     BaseItem* k = this->bag->get();
     if( k != nullptr){
         k->use(this, nullptr);
     }
     return false;
+    // bool t = true;
+    // if(this->bag->checkItem(PASSING_CARD) and this->getHP()%2 == 0){
+    //     BaseItem *k = new PassingCard(0,0);
+    //     if(k->canUse(this, robotW)){
+    //         this->bag->get(PASSING_CARD)->use(this, robotW);
+    //         this->bag->insert(robotW->NewItem());
+    //         string out = "Watson beat RobotW and got item.";
+    //         Logger::instance().add(out);
+    //         t = false;
+    //     }
+    // }
+    // else if(this->getHP() > 350){
+    //     if(t){
+    //         this->bag->insert(robotW->NewItem());
+    //         string out = "Watson beat RobotW and got item.";
+    //         Logger::instance().add(out);
+    //     }
+    // }
+    // else{
+    //     this->setHP(ceil((float)this->getHP()*0.95));
+    //     string out = "Watson lost to RobotW (-5% HP).";
+    //     Logger::instance().add(out);
+    // }
+    // BaseItem* k = this->bag->get();
+    // if( k != nullptr){
+    //     k->use(this, nullptr);
+    // }
+    // return false;
 }
 bool Watson::meet(RobotSW *robotSW)
 {
-    bool t = true;
     if(this->bag->checkItem(PASSING_CARD) and this->getHP()%2 == 0){
         BaseItem *k = new PassingCard(0,0);
         if(k->canUse(this, robotSW) ){
             this->bag->get(PASSING_CARD)->use(this, robotSW);
-            this->bag->insert(robotSW->NewItem());
-            string out = "Watson beat RobotSW and got item.";
-            Logger::instance().add(out);
-            t = false;
-        }
-    }
-    else if(this->getEXP() > 600 and this->getHP() > 165){ 
-       if(t){
-            this->bag->insert(robotSW->NewItem());
-            string out = "Watson beat RobotSW and got item.";
-            Logger::instance().add(out);
+
+            BaseItem* q = this->bag->get();
+            if(q != nullptr){
+                q->use(this, nullptr);
+            }
+            return true;
         }
     }
     else{
-        this->setEXP(ceil((float)this->getEXP()*0.85));
-        this->setHP(ceil((float)this->getHP()*0.85));
-        string out = "Watson lost to RobotSW (-15% HP, EXP).";
-        Logger::instance().add(out);
+        int hpLoss = 0;
+        int expLoss = 0;
+        int expGain = 0;
+        bool result = this->watsonBattle(800, 100, -0.1, hpLoss, expLoss, expGain);
+        if(result){
+            this->bag->insert(robotSW->NewItem());
+            string out = "Watson beat RobotSW (+" + to_string(expGain) + "EXP), got item";
+            Logger::instance().add(out);
+        }
+        else{
+            string out = "Watson lost to RobotSW (-" + to_string(hpLoss) + " HP, -" + to_string(expLoss) + " EXP)";
+            Logger::instance().add(out);
+        }
     }
     
     BaseItem* k = this->bag->get();
@@ -2350,16 +2642,32 @@ bool Watson::meet(RobotC *robotC)
         BaseItem *k = new PassingCard(0,0);
         if(k->canUse(this, robotC)){
             this->bag->get(PASSING_CARD)->use(this, robotC);
-            this->bag->insert(robotC->NewItem());
-            string out = "Watson beat RobotC and got item.";
+            BaseItem* q = this->bag->get();
+            if(q != nullptr){
+                q->use(this, nullptr);
+            }
+            string out = "Watson caught Criminal (PassingCard)";
             Logger::instance().add(out);
+            return true;
         }
     }
     else{
-        this->bag->insert(robotC->NewItem());
-        string out = "Watson lost to RobotC and got item.";
-        Logger::instance().add(out);
+        int hpLoss = 0;
+        int expLoss = 0;
+        int expGain = 0;
+        bool result = this->watsonBattle(2000, 100, -0.1, hpLoss, expLoss, expGain);
+        if(result){
+            this->bag->insert(robotC->NewItem());
+            string out = "Watson caught Criminal";
+            Logger::instance().add(out);
+            return true;
+        }
+        else{
+            string out = "Watson lost to RobotC (-" + to_string(hpLoss) + " HP, -" + to_string(expLoss) + " EXP)";
+            Logger::instance().add(out);
+        }
     }
+
     BaseItem* k = this->bag->get();
     if( k != nullptr){
         k->use(this, nullptr);
@@ -2379,7 +2687,7 @@ bool Watson::meet(Sherlock *sherlock)
         Logger::instance().add(out);
     }
     else{
-        string out = "Watson met Sherlock.";
+        string out = "They did not have enough items.";
         Logger::instance().add(out);
     }
     return false;

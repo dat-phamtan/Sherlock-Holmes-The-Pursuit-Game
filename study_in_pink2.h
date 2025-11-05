@@ -229,6 +229,7 @@ public:
     void setHP(int hp);
     void setEXP(int exp);
     void setPos(Position pos);
+    bool sherlockBattle(int robotExp, float counterExp, float counterPercent, int& hpLoss, int& expLoss, int& expGain);
     
 };
 
@@ -262,6 +263,7 @@ public:
     void setHP(int hp);
     void setEXP(int exp);
     void setPos(Position pos);
+    bool watsonBattle(int robotExp, float counterExp, float counterPercent, int& hpLoss, int& expLoss, int& expGain);
     
 };
 

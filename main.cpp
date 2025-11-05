@@ -419,7 +419,7 @@ public:
         DrawText("Sherlock HP", 1240, 115, 20, white);
         DrawHpMpBar(1390, 115, 185, 20, program->sherlock->getHP(), 500, true);
         DrawText("Sherlock EXP", 1240, 145, 20, white);
-        DrawHpMpBar(1390, 145, 185, 20, program->sherlock->getEXP(), 400, true);
+        DrawHpMpBar(1390, 145, 185, 20, program->sherlock->getEXP(), 3000, true);
         string sherlockBag = "Bag : " + to_string(program->sherlock->getBag()->getSize()) + "/" + to_string(6);
         DrawText(sherlockBag.c_str(), 1240, 175, 20, white);
         DrawItemBox(1250, 205, 55, 50, 6);
@@ -427,9 +427,9 @@ public:
 
 
         DrawText("Watson HP", 1240, 295, 20, white);
-        DrawHpMpBar(1390, 295, 185, 20, program->watson->getHP(), 400, true);
+        DrawHpMpBar(1390, 295, 185, 20, program->watson->getHP(), 700, true);
         DrawText("Watson EXP", 1240, 325, 20, white);
-        DrawHpMpBar(1390, 325, 185, 20, program->watson->getEXP(), 400, true);
+        DrawHpMpBar(1390, 325, 185, 20, program->watson->getEXP(), 2500, true);
         string watsonBag = "Bag: " + to_string(program->watson->getBag()->getSize()) + "/" + to_string(12);
         DrawText(watsonBag.c_str(), 1240, 355, 20, white);
         DrawItemBox(1250, 385, 55, 50, 6);
@@ -726,6 +726,7 @@ public:
 
 int main () {
     cout << "Starting the game..." << endl;
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1800, 970, "Sherlock Holmes: The Pursuit Game");
     SetTargetFPS(60);
     // Texture2D background = LoadTexture("resources/treasure.jpeg");
