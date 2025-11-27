@@ -704,7 +704,7 @@ Robot *Robot::create(int index, Map *map, Criminal *criminal, Sherlock *sherlock
         return new RobotC(index, criminal->getPrevPosition(), map, criminal);
     }
     else{
-        return new RobotS(index, criminal->getPrevPosition(), map, criminal, sherlock);
+        // return new RobotS(index, criminal->getPrevPosition(), map, criminal, sherlock);
         int randomNum = randomInt(0, 2);
         if (randomNum == 0){
             return new RobotS(index, criminal->getPrevPosition(), map, criminal, sherlock);
@@ -1216,12 +1216,12 @@ bool MagicBook::canUse(Character *obj, Robot *robot)
     if (robot == nullptr){
         if (obj->getObjectType() == SHERLOCK){
             Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-            if (obj2->getEXP() <= 350){return true;}
+            if (obj2->getEXP() <= 2000){return true;}
             else {return false;}
         }
         else if(obj->getObjectType() == WATSON){
             Watson * obj2 = dynamic_cast<Watson*>(obj);
-            if (obj2->getEXP() <= 350){return true;}
+            if (obj2->getEXP() <= 1600){return true;}
             else {return false;}
         }
         else{return false;}
@@ -1235,11 +1235,15 @@ void MagicBook::use(Character *obj, Robot *robot)
     if (robot == nullptr and this ->canUse(obj, robot)){
         if(obj->getObjectType() == SHERLOCK){
             Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-            obj2->setEXP(ceil((float)obj2->getEXP()*1.25));
+            obj2->setEXP(ceil((float)(obj2->getEXP() + 200)));
+            string out = "Sherlock used MagicBook and got 200 EXP";
+            Logger::instance().add(out);
         }
         else if (obj->getObjectType() == WATSON){
             Watson * obj2 = dynamic_cast<Watson*>(obj);
-            obj2->setEXP(ceil((float)obj2->getEXP()*1.25));
+            obj2->setEXP(ceil((float)(obj2->getEXP() + 100)));
+            string out = "Watson used MagicBook and got 100 EXP";
+            Logger::instance().add(out);
         }
     }
 }
@@ -1257,12 +1261,12 @@ bool EnergyDrink::canUse(Character *obj, Robot *robot)
     if (robot == nullptr){
         if (obj->getObjectType() == SHERLOCK){
             Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-            if (obj2->getHP() <= 100){return true;}
+            if (obj2->getHP() <= 200){return true;}
             else {return false;}
         }
         else if(obj->getObjectType() == WATSON){
             Watson * obj2 = dynamic_cast<Watson*>(obj);
-            if (obj2->getHP() <= 100){return true;}
+            if (obj2->getHP() <= 300){return true;}
             else {return false;}
         }
         else{return false;}
@@ -1276,11 +1280,15 @@ void EnergyDrink::use(Character *obj, Robot *robot)
     if (robot == nullptr and this ->canUse(obj, robot)){
         if(obj->getObjectType() == SHERLOCK){
             Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-            obj2->setHP(ceil((float)obj2->getHP()*1.2));
+            obj2->setHP(ceil((float)(obj2->getHP() + 50)));
+            string out = "Sherlock used EnergyDrink and got 50 HP";
+            Logger::instance().add(out);
         }
         else if (obj->getObjectType() == WATSON){
             Watson * obj2 = dynamic_cast<Watson*>(obj);
-            obj2->setHP(ceil((float)obj2->getHP()*1.2));
+            obj2->setHP(ceil((float)(obj2->getHP() + 50)));
+            string out = "Watson used EnergyDrink and got 50 HP";
+            Logger::instance().add(out);
         }
     }
 }
@@ -1298,12 +1306,12 @@ bool FirstAid::canUse(Character *obj, Robot *robot)
     if (robot == nullptr){
         if (obj->getObjectType() == SHERLOCK){
             Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-            if (obj2->getHP() <= 100 or obj2->getEXP() <= 350){return true;}
+            if (obj2->getHP() <= 100 or obj2->getEXP() <= 250){return true;}
             else {return false;}
         }
         else if(obj->getObjectType() == WATSON){
             Watson * obj2 = dynamic_cast<Watson*>(obj);
-            if (obj2->getHP() <= 100 or obj2->getEXP() <= 350){return true;}
+            if (obj2->getHP() <= 100 or obj2->getEXP() <= 250){return true;}
             else {return false;}
         }
         else{return false;}
@@ -1317,11 +1325,15 @@ void FirstAid::use(Character *obj, Robot *robot)
     if (robot == nullptr and this ->canUse(obj, robot)){
         if(obj->getObjectType() == SHERLOCK){
             Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-            obj2->setHP(ceil((float)obj2->getHP()*1.5));
+            obj2->setHP(ceil((float)(obj2->getHP() + 150)));
+            string out = "Sherlock used FirstAid and got 150 HP";
+            Logger::instance().add(out);
         }
         else if (obj->getObjectType() == WATSON){
             Watson * obj2 = dynamic_cast<Watson*>(obj);
-            obj2->setHP(ceil((float)obj2->getHP()*1.5));
+            obj2->setHP(ceil((float)(obj2->getHP() + 150)));
+            string out = "Watson used FirstAid and got 150 HP";
+            Logger::instance().add(out);
         }
     }
 }
@@ -1349,6 +1361,9 @@ bool ExcemptionCard::canUse(Character *obj, Robot *robot)
 void ExcemptionCard::use(Character *obj, Robot *robot)
 {
     // TODO: sinh viên hiện thực theo tư duy code của mình (hàm có thể rỗng)
+    string out = "Sherlock used ExcemptionCard and won the fight";
+    Logger::instance().add(out);
+    
 }
 // *CLASS: PassingCard
 PassingCard::PassingCard(string challenge){
@@ -1386,47 +1401,61 @@ bool PassingCard::canUse(Character *obj, Robot *robot)
 void PassingCard::use(Character *obj, Robot *robot)
 {
     if(this->challenge == "all"){
+        string out = "Watson used the right PassingCard";
+        Logger::instance().add(out);
     }
     if(this->challenge == "RobotS"){
         if(robot->getType() == S){
+            string out = "Watson used the right PassingCard";
+            Logger::instance().add(out);
         }
         else{
             if(obj->getObjectType() == SHERLOCK){
                 Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-                obj2->setEXP(obj2->getEXP() - 50);
+                obj2->setEXP(obj2->getEXP() - 150);
             }
             if(obj->getObjectType() == WATSON){
                 Watson *obj2 = dynamic_cast<Watson*>(obj);
-                obj2->setEXP(obj2->getEXP() - 50);
+                obj2->setEXP(obj2->getEXP() - 150);
             }
+            string out = "Wrong PassingCard, Watson lost 150 HP";
+            Logger::instance().add(out);
         }
     }
     if(this->challenge == "RobotC"){
         if(robot->getType() == C){
+            string out = "Watson used the right PassingCard";
+            Logger::instance().add(out);
         }
         else{
             if(obj->getObjectType() == SHERLOCK){
                 Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-                obj2->setEXP(obj2->getEXP() - 50);
+                obj2->setEXP(obj2->getEXP() - 150);
             }
             if(obj->getObjectType() == WATSON){
                 Watson *obj2 = dynamic_cast<Watson*>(obj);
-                obj2->setEXP(obj2->getEXP() - 50);
+                obj2->setEXP(obj2->getEXP() - 150);
             }
+            string out = "Wrong PassingCard, Watson lost 150 HP";
+            Logger::instance().add(out);
         }
     }
     if(this->challenge == "RobotSW"){
         if(robot->getType() == SW){
+            string out = "Watson used the right PassingCard";
+            Logger::instance().add(out);
         }
         else{
             if(obj->getObjectType() == SHERLOCK){
                 Sherlock *obj2 = dynamic_cast<Sherlock*>(obj);
-                obj2->setEXP(obj2->getEXP() - 50);
+                obj2->setEXP(obj2->getEXP() - 150);
             }
             if(obj->getObjectType() == WATSON){
                 Watson *obj2 = dynamic_cast<Watson*>(obj);
-                obj2->setEXP(obj2->getEXP() - 50);
+                obj2->setEXP(obj2->getEXP() - 150);
             }
+            string out = "Wrong PassingCard, Watson lost 150 HP";
+            Logger::instance().add(out);
         }
     }
 }
@@ -1986,21 +2015,31 @@ bool ArrayMovingObject::checkMeet(int index) const
 
                             return true;
                         }
-                        else{check = false;}
+                        else{
+                            // const_cast<ArrayMovingObject*>(this)->remove(i);
+                            // i--;    
+                            check = false;
+                        }
                     }
                     if(robotout->getType() == W){
                         RobotW *robotw = dynamic_cast<RobotW*>(robotout);
                         out->meet(robotw);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(robotout->getType() == S){
                         RobotS *robots = dynamic_cast<RobotS*>(robotout);
                         out->meet(robots);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(robotout->getType() == SW){
                         RobotSW *robotsw = dynamic_cast<RobotSW*>(robotout);
                         out->meet(robotsw);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                 }
@@ -2025,21 +2064,29 @@ bool ArrayMovingObject::checkMeet(int index) const
                     if(robotout->getType() == C){
                         RobotC *robotc = dynamic_cast<RobotC*>(robotout);
                         out->meet(robotc);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(robotout->getType() == SW){
                         RobotSW *robotsw = dynamic_cast<RobotSW*>(robotout);
                         out->meet(robotsw);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(robotout->getType() == W){
                         RobotW *robotw = dynamic_cast<RobotW*>(robotout);
                         out->meet(robotw);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(robotout->getType() == S){
                         RobotS *robots = dynamic_cast<RobotS*>(robotout);
                         out->meet(robots);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     
@@ -2085,21 +2132,31 @@ bool ArrayMovingObject::checkMeet(int index) const
                             }
                             return true;
                         }
-                        else{check = false;}
+                        else{
+                            // const_cast<ArrayMovingObject*>(this)->remove(i);
+                            // i--;
+                            check = false;
+                        }
                     }
                     if(out->getType() == W){
                         RobotW *robotw = dynamic_cast<RobotW*>(out);
                         sherlock->meet(robotw);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(out->getType() == S){
                         RobotS *robots = dynamic_cast<RobotS*>(out);
                         sherlock->meet(robots);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(out->getType() == SW){
                         RobotSW *robotsw = dynamic_cast<RobotSW*>(out);
                         sherlock->meet(robotsw);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                 }
@@ -2108,22 +2165,29 @@ bool ArrayMovingObject::checkMeet(int index) const
                     if(out->getType() == C){
                         RobotC *robotc = dynamic_cast<RobotC*>(out);
                         watson->meet(robotc);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(out->getType() == W){
                         RobotW *robotw = dynamic_cast<RobotW*>(out);
                         watson->meet(robotw);
-                        
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(out->getType() == S){
                         RobotS *robots = dynamic_cast<RobotS*>(out);
                         watson->meet(robots);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                     if(out->getType() == SW){
                         RobotSW *robotsw = dynamic_cast<RobotSW*>(out);
                         watson->meet(robotsw);
+                        // const_cast<ArrayMovingObject*>(this)->remove(i);
+                        // i--;
                         check = false;
                     }
                 }
@@ -2136,6 +2200,131 @@ bool ArrayMovingObject::checkMeet(int index) const
     }
     return false;
 }
+
+// // Refactored checkMeet to avoid segfault, reduce duplication, and maintain original logic
+// bool ArrayMovingObject::checkMeet(int index) const {
+//     bool check = true;
+//     MovingObject *currentObj = this->get(index);
+//     Position curPos = currentObj->getCurrentPosition();
+
+//     for(int i = 0; i < count; i++){
+//         if(i == index) continue;
+//         if(!curPos.isEqual(arr_mv_objs[i]->getCurrentPosition())) continue;
+
+//         int type = arr_mv_objs[i]->getObjectType();
+
+//         // ================= SHERLOCK =================
+//         if(currentObj->str().find("Sherlock") != -1){
+//             Sherlock *sherlock = dynamic_cast<Sherlock*>(currentObj);
+
+//             if(type == ROBOT){
+//                 Robot *rb = dynamic_cast<Robot*>(arr_mv_objs[i]);
+//                 int rtype = rb->getType();
+
+//                 if(rtype == C){
+//                     RobotC *robotc = dynamic_cast<RobotC*>(rb);
+//                     if(sherlock->meet(robotc)){
+//                         for(int k = 0; k < count; k++){
+//                             if(this->get(k)->str().find("Criminal") != -1){
+//                                 Criminal *getpos = dynamic_cast<Criminal*>(this->get(k));
+//                                 sherlock->setPos(getpos->getCurrentPosition());
+//                                 break;
+//                             }
+//                         }
+//                         return true;
+//                     }
+//                     const_cast<ArrayMovingObject*>(this)->remove(i);
+//                     i--; continue;
+//                 }
+//                 if(rtype == W){ RobotW *robotw = dynamic_cast<RobotW*>(rb); sherlock->meet(robotw); const_cast<ArrayMovingObject*>(this)->remove(i); i--; continue; }
+//                 if(rtype == S){ RobotS *robots = dynamic_cast<RobotS*>(rb); sherlock->meet(robots); const_cast<ArrayMovingObject*>(this)->remove(i); i--; continue; }
+//                 if(rtype == SW){ RobotSW *robotsw = dynamic_cast<RobotSW*>(rb); sherlock->meet(robotsw); const_cast<ArrayMovingObject*>(this)->remove(i); i--; continue; }
+//             }
+//             if(type == WATSON){ Watson *watson = dynamic_cast<Watson*>(arr_mv_objs[i]); sherlock->meet(watson); continue; }
+//             if(type == CRIMINAL) return true;
+
+//             continue;
+//         }
+
+//         // ================= WATSON =================
+//         else if(currentObj->str().find("Watson") != -1){
+//             Watson *watson = dynamic_cast<Watson*>(currentObj);
+
+//             if(type == ROBOT){
+//                 Robot *rb = dynamic_cast<Robot*>(arr_mv_objs[i]);
+//                 int rtype = rb->getType();
+
+//                 if(rtype == C){ RobotC *robotc = dynamic_cast<RobotC*>(rb); watson->meet(robotc); const_cast<ArrayMovingObject*>(this)->remove(i); i--; continue; }
+//                 if(rtype == SW){ RobotSW *robotsw = dynamic_cast<RobotSW*>(rb); watson->meet(robotsw); const_cast<ArrayMovingObject*>(this)->remove(i); i--; continue; }
+//                 if(rtype == W){ RobotW *robotw = dynamic_cast<RobotW*>(rb); watson->meet(robotw); const_cast<ArrayMovingObject*>(this)->remove(i); i--; continue; }
+//                 if(rtype == S){ RobotS *robots = dynamic_cast<RobotS*>(rb); watson->meet(robots); const_cast<ArrayMovingObject*>(this)->remove(i); i--; continue; }
+//             }
+
+//             if(type == SHERLOCK){ Sherlock *sherlock = dynamic_cast<Sherlock*>(arr_mv_objs[i]); watson->meet(sherlock); continue; }
+//             if(type == CRIMINAL) return true;
+
+//             continue;
+//         }
+
+//         // ================= CRIMINAL =================
+//         else if(currentObj->str().find("Criminal") != -1){
+//             if(type == SHERLOCK || type == WATSON) return true;
+//             check = false;
+//             continue;
+//         }
+
+//         // ================= ROBOT SELF =================
+//         else if(currentObj->str().find("Robot") != -1){
+//             Robot *rbSelf = dynamic_cast<Robot*>(currentObj);
+
+//             if(type == SHERLOCK){
+//                 Sherlock *sherlock = dynamic_cast<Sherlock*>(arr_mv_objs[i]);
+//                 int rtype = rbSelf->getType();
+
+//                 if(rtype == C){ RobotC *robotc = dynamic_cast<RobotC*>(rbSelf);
+//                     if(sherlock->meet(robotc)){
+//                         for(int k = 0; k < count; k++){
+//                             if(this->get(k)->str().find("Criminal") != -1){ Criminal *getpos = dynamic_cast<Criminal*>(this->get(k)); sherlock->setPos(getpos->getCurrentPosition()); break; }
+//                         }
+//                         return true;
+//                     }
+//                     const_cast<ArrayMovingObject*>(this)->remove(index);
+//                     return false;
+//                 }
+//                 if(rtype == W){ RobotW *robotw = dynamic_cast<RobotW*>(rbSelf); sherlock->meet(robotw); const_cast<ArrayMovingObject*>(this)->remove(index); return false; }
+//                 if(rtype == S){ RobotS *robots = dynamic_cast<RobotS*>(rbSelf); sherlock->meet(robots); const_cast<ArrayMovingObject*>(this)->remove(index); return false; }
+//                 if(rtype == SW){ RobotSW *robotsw = dynamic_cast<RobotSW*>(rbSelf); sherlock->meet(robotsw); const_cast<ArrayMovingObject*>(this)->remove(index); return false; }
+//             }
+
+//             if(type == WATSON){ Watson *watson = dynamic_cast<Watson*>(arr_mv_objs[i]); int rtype = rbSelf->getType();
+//                 if(rtype == C){ RobotC *robotc = dynamic_cast<RobotC*>(rbSelf); watson->meet(robotc); const_cast<ArrayMovingObject*>(this)->remove(index); return false; }
+//                 if(rtype == W){ RobotW *robotw = dynamic_cast<RobotW*>(rbSelf); watson->meet(robotw); const_cast<ArrayMovingObject*>(this)->remove(index); return false; }
+//                 if(rtype == S){ RobotS *robots = dynamic_cast<RobotS*>(rbSelf); watson->meet(robots); const_cast<ArrayMovingObject*>(this)->remove(index); return false; }
+//                 if(rtype == SW){ RobotSW *robotsw = dynamic_cast<RobotSW*>(rbSelf); watson->meet(robotsw); const_cast<ArrayMovingObject*>(this)->remove(index); return false; }
+//             }
+
+//             if(type == CRIMINAL){ check = false; continue; }
+//         }
+//     }
+
+//     return check;
+// } 
+
+void ArrayMovingObject::remove(int index){
+    // Không bao giờ xóa Criminal, Sherlock, Watson
+    if(index >= 0 && index < 3) return;
+
+    if(index < 0 || index >= count) return;
+
+    delete arr_mv_objs[index]; // giải phóng robot
+
+    for(int j = index; j < count - 1; j++){
+        arr_mv_objs[j] = arr_mv_objs[j + 1];
+    }
+
+    count--;
+}
+
 
 
 
@@ -2193,17 +2382,17 @@ void Sherlock::setPos(Position pos)
 
 /*
 RobotS: Thông minh, khắc chế Sherlock nhưng bị Watson khắc chế.
-- exp: 600
+- exp: 800
 - counter: sherlock (50, -0.05)
 - countered: watson (50, 0.05)
 
 RobotW: Mạnh mẽ, khắc chế Watson nhưng bị Sherlock khắc chế.
-- exp: 400
+- exp: 600
 - counter: watson (50, -0.05)
 - countered: sherlock (50, 0.05)
 
 RobotSW: Boss, khắc chế mạnh cả Sherlock và Watson.
-- exp: 800
+- exp: 1000
 - counter: sherlock (100, -0.1), watson (100, -0.1)
 - countered: none
 
@@ -2518,10 +2707,10 @@ bool Watson::meet(RobotS *robotS)
         int hpLoss = 0;
         int expLoss = 0;
         int expGain = 0;
-        bool result = this->watsonBattle(400, 50, 0.05, hpLoss, expLoss, expGain);
+        bool result = this->watsonBattle(800, 50, 0.05, hpLoss, expLoss, expGain);
         if(result){
             this->bag->insert(robotS->NewItem());
-            string out = "Watson beat RobotW (+" + to_string(expGain) + "EXP), got item";
+            string out = "Watson beat RobotW (+" + to_string(expGain) + " EXP), got item";
             Logger::instance().add(out);
         }
         else{
@@ -2554,10 +2743,10 @@ bool Watson::meet(RobotW *robotW)
         int hpLoss = 0;
         int expLoss = 0;
         int expGain = 0;
-        bool result = this->watsonBattle(400, 50, -0.05, hpLoss, expLoss, expGain);
+        bool result = this->watsonBattle(600, 50, -0.05, hpLoss, expLoss, expGain);
         if(result){
             this->bag->insert(robotW->NewItem());
-            string out = "Watson beat RobotW (+" + to_string(expGain) + "EXP), got item";
+            string out = "Watson beat RobotW (+" + to_string(expGain) + " EXP), got item";
             Logger::instance().add(out);
         }
         else{
@@ -2618,10 +2807,10 @@ bool Watson::meet(RobotSW *robotSW)
         int hpLoss = 0;
         int expLoss = 0;
         int expGain = 0;
-        bool result = this->watsonBattle(800, 100, -0.1, hpLoss, expLoss, expGain);
+        bool result = this->watsonBattle(1000, 100, -0.1, hpLoss, expLoss, expGain);
         if(result){
             this->bag->insert(robotSW->NewItem());
-            string out = "Watson beat RobotSW (+" + to_string(expGain) + "EXP), got item";
+            string out = "Watson beat RobotSW (+" + to_string(expGain) + " EXP), got item";
             Logger::instance().add(out);
         }
         else{

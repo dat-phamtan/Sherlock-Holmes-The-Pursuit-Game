@@ -287,6 +287,10 @@ public:
     int getCount() const;
     bool createRobotC();
     Position getPrevPosition() const;
+    void setPos(int i, int j){
+        this->pos.setCol(i);
+        this->pos.setRow(j);
+    }
 };
 
 class ArrayMovingObject
@@ -308,6 +312,8 @@ public:
     bool checkMeet(int index) const;
     MovingObject *get(int index) const;
     int size() const;
+    void remove(int index);
+    
     // void insertLogString(string aLog);
     // deque<string> getLogString(){
     //     return this->logString;

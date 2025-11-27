@@ -26,6 +26,12 @@ enum GameState {
     MAIN_MENU, 
 };
 
+int randomPos(int min, int max) {
+    static random_device rd;
+    static mt19937 gen(rd());
+    uniform_int_distribution<> dist(min, max);
+    return dist(gen);
+}
 
 bool eventTriggered(double interval){
     double currentTime = GetTime();
@@ -134,6 +140,9 @@ public:
     string stopCase = "";
     int caseFlag = 0;
     bool doublePlayerFlag = true;
+    int screenW = GetScreenWidth();
+    int screenH = GetScreenHeight();
+    // Sound menuMusic;
 
     Image wall;
     Image fake_wall;
@@ -160,6 +169,11 @@ public:
     Image menuBG;
     Image singlePlayer;
     Image doublePlayer;
+    Image bg;
+    Image bg1;
+    Image bg2;
+    Image bg3;
+    Image bg4;
 
     Texture2D wallTexture;
     Texture2D fakeWallTexture;
@@ -186,9 +200,16 @@ public:
     Texture2D menuBGTexture;
     Texture2D singlePlayerTexture;
     Texture2D doublePlayerTexture;
+    Texture2D bgTexture;
+    Texture2D bg1Texture;
+    Texture2D bg2Texture;
+    Texture2D bg3Texture;
+    Texture2D bg4Texture;
+
 
 
     Game(){
+        // menuMusic = LoadMusicStream
         
         wall = LoadImage("resources/wall.jpeg");
         fake_wall = LoadImage("resources/fakewall.jpeg");
@@ -212,10 +233,14 @@ public:
         watsonCatch = LoadImage("resources/watson_catch_criminal.png");
         // logo = LoadImage("resources/logo.png");
         gameOverBG = LoadImage("resources/GameOverBG.png");
-        menuBG = LoadImage("resources/backgroundMenu.png");
+        // menuBG = LoadImage("resources/backgroundMenu.png");
         singlePlayer = LoadImage("resources/singleplayer.png");
         doublePlayer = LoadImage("resources/doubleplayers.png");
-
+        bg = LoadImage("resources/bg.png");
+        bg1 = LoadImage("resources/bg1.png");
+        bg2 = LoadImage("resources/bg2.png");
+        // bg3 = LoadImage("resources/bg3.png");
+        // bg4 = LoadImage("resources/bg4.png");
         
 
         wallTexture = LoadTextureFromImage(wall);
@@ -240,10 +265,14 @@ public:
         watsonCatchTexture = LoadTextureFromImage(watsonCatch);
         // logoTexture = LoadTextureFromImage(logo);
         gameOverBGTexture = LoadTextureFromImage(gameOverBG);
-        menuBGTexture = LoadTextureFromImage(menuBG);
+        // menuBGTexture = LoadTextureFromImage(menuBG);
         singlePlayerTexture = LoadTextureFromImage(singlePlayer);
         doublePlayerTexture = LoadTextureFromImage(doublePlayer);
-
+        bgTexture = LoadTextureFromImage(bg);
+        bg1Texture = LoadTextureFromImage(bg1);
+        bg2Texture = LoadTextureFromImage(bg2);
+        // bg3Texture = LoadTextureFromImage(bg3);
+        // bg4Texture = LoadTextureFromImage(bg4);
 
         UnloadImage(wall);
         UnloadImage(fake_wall);
@@ -267,9 +296,14 @@ public:
         UnloadImage(watsonCatch);
         // UnloadImage(logo);
         UnloadImage(gameOverBG);
-        UnloadImage(menuBG);
+        // UnloadImage(menuBG);
         UnloadImage(singlePlayer);
         UnloadImage(doublePlayer);
+        UnloadImage(bg);
+        UnloadImage(bg1);
+        UnloadImage(bg2);
+        // UnloadImage(bg3);
+        // UnloadImage(bg4);
     
 
     };
@@ -298,9 +332,14 @@ public:
         UnloadTexture(watsonCatchTexture);
         // UnloadTexture(logoTexture);
         UnloadTexture(gameOverBGTexture);
-        UnloadTexture(menuBGTexture);
+        // UnloadTexture(menuBGTexture);
         UnloadTexture(singlePlayerTexture);
         UnloadTexture(doublePlayerTexture);
+        UnloadTexture(bgTexture);
+        UnloadTexture(bg1Texture);
+        UnloadTexture(bg2Texture);
+        // UnloadTexture(bg3Texture);
+        // UnloadTexture(bg4Texture);
 
         delete program;
     };
@@ -311,10 +350,42 @@ public:
         program = new StudyPinkProgram(configFile);
         numCols = this->program->map->getNumCols();
         numRows = this->program->map->getNumRows();
+        GenerateInitPos(program);
         COUNT = 0;
         Logger::instance().add("Game started");
         // state = GameState::PLAYING;
     };
+
+    void GenerateInitPos(StudyPinkProgram* program){
+        int i, j, m, n;
+        while(true){
+            i = randomPos(0, 19);
+            j = randomPos(0, 26);
+            if(program->map->isValid(Position(i,j), program->criminal)){
+                break;
+            }
+        }
+        program->criminal->setPos(j,i);
+
+        while(true){
+            i = randomPos(0, 19);
+            j = randomPos(0, 26);
+            m = randomPos(0, 19);
+            n = randomPos(0, 26);
+            if(!program->map->isValid(Position(i,j), program->sherlock) || !program->map->isValid(Position(m,n), program->watson)){
+                continue;
+            }
+            if(program->criminal->manhattanDistance(Position(i,j), Position(m,n)) < 4){
+                continue;
+            }
+            if(program->criminal->manhattanDistance(Position(i,j), program->criminal->getCurrentPosition()) > 5 
+            && program->criminal->manhattanDistance(Position(m,n), program->criminal->getCurrentPosition()) > 5){
+                break;
+            }
+        }
+        program->sherlock->setPos(Position(i,j));
+        program->watson->setPos(Position(m,n));
+    }
 
     void DrawMap() {
         for (int i = 0; i < numRows; i++) {
@@ -487,8 +558,87 @@ public:
         }
     };
 
-    void DrawGameOverScreen(){
+ 
+// --- BẮT BUỘC: Phải load 3 textures này trước khi vào vòng lặp game ---
+// Texture2D bgTexture = LoadTexture("bg.jpg");   // Ảnh bình thường (nền chính)
+// Texture2D bg1Texture = LoadTexture("bg1.jpg"); // Ảnh tối hơn
+// Texture2D bg2Texture = LoadTexture("bg2.jpg"); // Ảnh sáng nhất
+// -----------------------------------------------------------------
+    void DrawMainMenu() {
 
+        // --- Biến trạng thái tĩnh (static) ---
+        // 0: Trạng thái BÌNH THƯỜNG (bgTexture)
+        // 1: Trạng thái GIỮ TỐI (bg1Texture)
+        // 2: Trạng thái CHẬP CHỜN (bg1Texture <-> bg2Texture)
+        static int animationState = 0;      
+        static float stateTimer = 4.0f;       // Đồng hồ đếm ngược cho mỗi trạng thái
+                                            // (Bắt đầu ở trạng thái 0, giữ 4 giây)
+        
+        static float microFlickerTimer = 0.0f; // Đồng hồ cho việc đổi ảnh khi đang chập chờn (Trạng thái 2)
+        
+        // Mảng tĩnh chứa các texture "CHẬP CHỜN"
+        static const Texture2D flickerTextures[] = { 
+            bg1Texture, bg2Texture 
+        };
+        static const int numFlickerTextures = 2;
+        
+        // Texture sẽ được vẽ ở khung hình này
+        static Texture2D currentTexture = bgTexture; // Khởi đầu bằng ảnh bình thường
+
+        float deltaTime = GetFrameTime();
+        
+        // --- 1. Cập nhật Logic Kịch bản ---
+        stateTimer -= deltaTime; // Đếm ngược đồng hồ chính
+
+        if (stateTimer <= 0.0f) {
+            // Hết giờ, chuyển sang trạng thái tiếp theo trong kịch bản
+            
+            if (animationState == 0) {
+                // ĐANG TỪ: Bình thường -> CHUYỂN SANG: Giữ Tối
+                animationState = 1;
+                stateTimer = 1.0f; // Yêu cầu: giữ tối trong 2 giây
+                
+                currentTexture = bg1Texture; // Đặt ảnh là TỐI
+            }
+            else if (animationState == 1) {
+                // ĐANG TỪ: Giữ Tối -> CHUYỂN SANG: Chập Chờn
+                animationState = 2;
+                // Yêu cầu: chập chờn trong 1-2 giây
+                stateTimer = (float)GetRandomValue(100, 200) / 100.0f; 
+                
+                microFlickerTimer = 0.0f; // Reset để chớp ngay lập tức
+            }
+            else if (animationState == 2) {
+                // ĐANG TỪ: Chập Chờn -> CHUYỂN SANG: Bình thường
+                animationState = 0;
+                // Giữ bình thường trong một khoảng thời gian ngẫu nhiên (ví dụ 3-6 giây)
+                stateTimer = (float)GetRandomValue(500, 1000) / 100.0f; 
+                
+                currentTexture = bgTexture; // Đặt ảnh là BÌNH THƯỜNG
+            }
+        }
+
+        // --- 2. Xử lý logic liên tục khi đang CHẬP CHỜN ---
+        if (animationState == 2) {
+            // Chỉ chạy logic này khi đang ở trạng thái chập chờn
+            microFlickerTimer -= deltaTime;
+
+            if (microFlickerTimer <= 0.0f) {
+                // Đã đến lúc đổi ảnh (giữa tối và sáng nhất)
+                currentTexture = flickerTextures[GetRandomValue(0, numFlickerTextures - 1)];
+                
+                // Đặt thời gian cho lần đổi ảnh tiếp theo (cực ngắn)
+                microFlickerTimer = (float)GetRandomValue(10, 15) / 100.0f; // 0.05 - 0.1 giây
+            }
+        }
+
+        // --- 3. Vẽ (Drawing) ---
+        // Giữ nguyên tỷ lệ 1800 như bạn đã có
+        
+        float bgTarget = (float)GetScreenWidth()/ currentTexture.width;
+        
+        // Vẽ texture đã được quyết định lên màn hình
+        DrawTextureEx(currentTexture, (Vector2){0.0f, 0.0f}, 0.0, bgTarget, WHITE);
     }
 
     void SherlockMove() {
@@ -526,6 +676,19 @@ public:
         }
         sherlockDiraction = "";
     };
+
+    // void DrawAnimation(Texture2D frames[], int numTexture, float x, float y){
+    //     static int animationState = 0;      
+    //     static float stateTimer = 4.0f;  
+
+    //     static Texture2D currentTexture = frames[0];
+    //     float deltaTime = GetFrameTime();
+
+        // while 
+        // float target = (float)cellSize/sherlockTexture.height;
+        // DrawTextureEx(sherlockTexture, (Vector2){(float)(offset + c * cellSize + 10), (float)(offset + r * cellSize )}, 0.0, target, WHITE);
+
+    // }
 
     void WatsonMove() {
         if (watsonDiraction == "D") {
@@ -725,19 +888,148 @@ public:
 
 
 int main () {
+    float masterVolume = 1.0f;
+    bool isMuted = false;
+    bool result = false;
+    bool stateChanged = false;
+
     cout << "Starting the game..." << endl;
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    //Phần cửa sổ
     InitWindow(1800, 970, "Sherlock Holmes: The Pursuit Game");
+
+
+    //Phần âm thanh
+    InitAudioDevice();
+    Music menuMusic = LoadMusicStream("resources/menuMusic.mp3");
+    Music playingMusic = LoadMusicStream("resources/playingMusic.mp3");
+    Music heartBeat = LoadMusicStream("resources/heartBeat.mp3");
+    Music winMusic = LoadMusicStream("resources/winMusic.mp3");
+    Music loseMusic = LoadMusicStream("resources/loseMusic.mp3");
+
+
+    SetMusicVolume(menuMusic, masterVolume);
+    SetMusicVolume(playingMusic, masterVolume);
+    SetMusicVolume(heartBeat, 0);
+    SetMusicVolume(winMusic, masterVolume);
+    SetMusicVolume(loseMusic, masterVolume);
+
+    PlayMusicStream(menuMusic);
+
     SetTargetFPS(60);
-    // Texture2D background = LoadTexture("resources/treasure.jpeg");
     string configFile = "input/input.txt";
     Game game = Game();
     game.GameInit(configFile);
 
+    
+    bool checkFirstTime = true;
 
     
 
     while(WindowShouldClose() == false) {
+
+        if(IsKeyDown(KEY_BACKSPACE) and IsKeyPressed(KEY_ENTER)){
+            game.state = MAIN_MENU;
+            string configFile = "input/input.txt";
+            Logger::instance().clear();
+            game.GameInit(configFile);
+            stateChanged = true;
+        }
+
+        //Change music
+        bool volumeChanged = false;
+        if(IsKeyPressed(KEY_L)){
+            masterVolume -= 0.1f;
+            volumeChanged = true;
+        }
+        if(IsKeyPressed(KEY_H)){
+            masterVolume += 0.1f;
+            volumeChanged = true;
+        }
+
+        masterVolume = Clamp(masterVolume, 0.0f, 2.0f);
+
+        if(IsKeyPressed(KEY_M)){
+            isMuted = !isMuted;
+            volumeChanged = true;
+        }
+
+        if(volumeChanged){
+            float currentVolume = isMuted ? 0.0f : masterVolume;
+            SetMusicVolume(menuMusic, currentVolume);
+            SetMusicVolume(playingMusic, currentVolume);
+            SetMusicVolume(winMusic, currentVolume);
+            SetMusicVolume(loseMusic, currentVolume);
+        }
+        
+        //----------------------------------------------------------------
+        // 2. CẬP NHẬT NHẠC (Chỉ cho trạng thái hiện tại)
+        //----------------------------------------------------------------
+        
+        if(stateChanged){
+            // Dừng TẤT CẢ nhạc đang phát để chuẩn bị
+            StopMusicStream(menuMusic);
+            StopMusicStream(playingMusic);
+            StopMusicStream(heartBeat);
+            StopMusicStream(winMusic);
+            StopMusicStream(loseMusic);
+
+            // Bắt đầu phát nhạc MỚI (từ đầu)
+            switch (game.state)
+            {
+                case MAIN_MENU:
+                    PlayMusicStream(menuMusic);
+                    break;
+                case PLAYING:
+                    PlayMusicStream(playingMusic);
+                    // (Không phát heartBeat vội, khối Update sẽ xử lý)
+                    break;
+                case OVER:
+                    if (result) {
+                        PlayMusicStream(winMusic);
+                    } else {
+                        PlayMusicStream(loseMusic);
+                    }
+                    break;
+            }
+            
+            stateChanged = false; // Reset lại cờ
+        }
+
+        switch (game.state)
+        {
+            case MAIN_MENU:
+                UpdateMusicStream(menuMusic);
+                if (!IsMusicStreamPlaying(menuMusic)) PlayMusicStream(menuMusic); // Lặp lại
+                break;
+            case PLAYING:
+                {UpdateMusicStream(playingMusic);
+                if (!IsMusicStreamPlaying(playingMusic)) PlayMusicStream(playingMusic); // Lặp lại
+                int sherDis = game.program->criminal->manhattanDistance(game.program->criminal->getCurrentPosition(), game.program->sherlock->getCurrentPosition());
+                int watDis = game.program->criminal->manhattanDistance(game.program->criminal->getCurrentPosition(), game.program->watson->getCurrentPosition());
+                if(sherDis < 8 || watDis < 8){
+                    int minDis = min(sherDis, watDis);
+                    SetMusicVolume(heartBeat, 7.0f - float(minDis) * 1);
+                    UpdateMusicStream(heartBeat);
+                    if(!IsMusicStreamPlaying(heartBeat)) PlayMusicStream(heartBeat);
+                    break;
+                }
+                else{
+                    StopMusicStream(heartBeat);
+                }
+
+                break;}
+            case OVER:
+                if(result){
+                    UpdateMusicStream(winMusic);
+                    if (!IsMusicStreamPlaying(winMusic)) PlayMusicStream(winMusic); // Lặp lại
+                }
+                else{
+                    UpdateMusicStream(loseMusic);
+                    if (!IsMusicStreamPlaying(loseMusic)) PlayMusicStream(loseMusic); // Lặp lại
+                }
+                break;
+        }
     
         //Drawing
         BeginDrawing();
@@ -788,7 +1080,7 @@ int main () {
 
             ClearBackground(backgroundColor);
             DrawRectangleLinesEx(Rectangle{(float)offset - 5, (float)offset - 5, (float)(cellSize*numCols) + 10 , (float)(cellSize*numRows) + 10 }, 5, white);
-            DrawText("Sherlock Holmes: The Potrait Game", offset - 5, 20, 40, white);
+            DrawText("Sherlock Holmes: The Pursuit Game", offset - 5, 20, 40, white);
             
             game.DrawMap();
             game.DrawDetailBoard();
@@ -799,14 +1091,17 @@ int main () {
             if (game.watsonDiraction != ""){
                 game.DrawWatsonDiractionArrow();
             }
+            
+    
             game.DrawCharacters();
+           
             
 
         }
         else if(game.state == GameState::OVER){
             ClearBackground(backgroundColor);
             DrawRectangleLinesEx(Rectangle{(float)offset - 5, (float)offset - 5, (float)(cellSize*numCols) + 10 , (float)(cellSize*numRows) + 10 }, 5, white);
-            DrawText("Sherlock Holmes: The Potrait Game", offset - 5, 20, 40, white);
+            DrawText("Sherlock Holmes: The Pursuit Game", offset - 5, 20, 40, white);
             
             game.DrawMap();
             game.DrawDetailBoard();
@@ -832,6 +1127,7 @@ int main () {
             if (playAgain){ 
                 delete game.program;
                 game.GameInit(configFile);
+                stateChanged = true;
                 game.state = GameState::PLAYING;
                 
             }
@@ -843,31 +1139,37 @@ int main () {
             Texture2D caseTexture;
             
             if (game.caseFlag == 1){//complete
+                result = false;
                 caseTexture = game.sherlockDieTexture;
                 float sTarget = (float)350/caseTexture.height;
                 DrawTextureEx(caseTexture, (Vector2){(float)(650), (float)(240)}, 0.0, sTarget, WHITE);
             } 
             else if (game.caseFlag == 2){//complete
+                result = false;
                 caseTexture = game.sherlockThinkingTexture;
                 float sTarget = (float)400/caseTexture.height;
                 DrawTextureEx(caseTexture, (Vector2){(float)(780), (float)(240)}, 0.0, sTarget, WHITE);
             } 
             else if (game.caseFlag == 3){//complete
+                result = false;
                 caseTexture = game.watsonDieTexture;
                 float sTarget = (float)400/caseTexture.height;
                 DrawTextureEx(caseTexture, (Vector2){(float)(620), (float)(230)}, 0.0, sTarget, WHITE);
             }
             else if (game.caseFlag == 4){
+                result = false;
                 caseTexture = game.watsonConfuseTexture;
                 float sTarget = (float)400/caseTexture.height;
                 DrawTextureEx(caseTexture, (Vector2){(float)(780), (float)(250)}, 0.0, sTarget, WHITE);
             } 
             else if (game.caseFlag == 5){//complete
+                result = true;
                 caseTexture = game.sherlockCatchTexture;
                 float sTarget = (float)370/caseTexture.height;
                 DrawTextureEx(caseTexture, (Vector2){(float)(740), (float)(250)}, 0.0, sTarget, WHITE);
             }
             else if (game.caseFlag == 6){//complete
+                result = true;
                 caseTexture = game.watsonCatchTexture;
                 float sTarget = (float)470/caseTexture.height;
                 DrawTextureEx(caseTexture, (Vector2){(float)(760), (float)(220)}, 0.0, sTarget, WHITE);
@@ -875,14 +1177,16 @@ int main () {
 
         }
         else if (game.state == GameState::MAIN_MENU){
-            float bgTarget = (float)1800 / game.menuBGTexture.width;
-            DrawTextureEx(game.menuBGTexture, (Vector2){0.0f, 0.0f}, 0.0, bgTarget, WHITE);
+            game.DrawMainMenu();
+
             float singleTarget = (float)78/ game.singlePlayerTexture.height;
             DrawTextureEx(game.singlePlayerTexture, (Vector2){480,570}, 0.0, singleTarget, WHITE);
             bool singleP = DrawClickedArea(Rectangle{495, 583, 314, 56});
             if(singleP){
                 game.doublePlayerFlag = false;
+                stateChanged = true;
                 game.state = GameState::PLAYING;
+                
             }
 
             float doubleTarget = (float)70 / game.doublePlayerTexture.height;
@@ -890,12 +1194,19 @@ int main () {
             bool doubleP = DrawClickedArea(Rectangle{507, 679, 294, 56});
             if(doubleP){
                 game.doublePlayerFlag = true;
-                game.state = GameState::PLAYING;
+                stateChanged = true;
+                game.state = GameState::PLAYING; 
             }
         }
 
         EndDrawing();
     }
+    UnloadMusicStream(menuMusic);
+    UnloadMusicStream(playingMusic);
+    UnloadMusicStream(heartBeat);
+    // UnloadMusicStream(endMusic);
+
+    CloseAudioDevice();
     CloseWindow();
     cout << "Game closed!" << endl;
     return 0;
